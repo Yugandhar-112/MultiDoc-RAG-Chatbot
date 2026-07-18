@@ -1,0 +1,113 @@
+<svg viewBox="0 0 980 620" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#9aa1b2" />
+    </marker>
+    <marker id="arrowBrass" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#c9a04e" />
+    </marker>
+  </defs>
+
+  <rect width="980" height="620" fill="#0e1117" />
+
+  <text x="30" y="38" fill="#e9e7df" font-size="20" font-weight="700">Multi-Document RAG Chatbot — Architecture</text>
+  <text x="30" y="58" fill="#9aa1b2" font-size="12.5">Upload → Parse → Chunk → Embed → Store → Retrieve → Generate → Cite</text>
+
+  <!-- Frontend box -->
+  <rect x="30" y="90" width="200" height="80" rx="8" fill="#1c212e" stroke="#2a3040" />
+  <text x="130" y="115" fill="#c9a04e" font-size="10.5" text-anchor="middle" letter-spacing="1">FRONTEND</text>
+  <text x="130" y="138" fill="#e9e7df" font-size="13" text-anchor="middle" font-weight="600">React (Vite)</text>
+  <text x="130" y="155" fill="#9aa1b2" font-size="11" text-anchor="middle">Upload panel + chat UI</text>
+
+  <!-- FastAPI box -->
+  <rect x="300" y="90" width="220" height="80" rx="8" fill="#1c212e" stroke="#2a3040" />
+  <text x="410" y="115" fill="#c9a04e" font-size="10.5" text-anchor="middle" letter-spacing="1">BACKEND</text>
+  <text x="410" y="138" fill="#e9e7df" font-size="13" text-anchor="middle" font-weight="600">FastAPI</text>
+  <text x="410" y="155" fill="#9aa1b2" font-size="11" text-anchor="middle">/documents · /chat · /sessions</text>
+
+  <line x1="230" y1="130" x2="298" y2="130" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+  <text x="264" y="122" fill="#666f84" font-size="9.5" text-anchor="middle">HTTP / JSON</text>
+
+  <!-- Claude box -->
+  <rect x="750" y="90" width="200" height="80" rx="8" fill="#1c212e" stroke="#c9a04e" stroke-width="1.3" />
+  <text x="850" y="115" fill="#c9a04e" font-size="10.5" text-anchor="middle" letter-spacing="1">LLM</text>
+  <text x="850" y="138" fill="#e9e7df" font-size="13" text-anchor="middle" font-weight="600">Claude API</text>
+  <text x="850" y="155" fill="#9aa1b2" font-size="11" text-anchor="middle">Grounded generation</text>
+
+  <!-- Pipeline row -->
+  <text x="30" y="215" fill="#e9e7df" font-size="14" font-weight="700">Ingestion pipeline (on upload)</text>
+
+  <g font-size="11.5">
+    <!-- step boxes -->
+    <rect x="30" y="235" width="130" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="95" y="260" fill="#e9e7df" text-anchor="middle" font-weight="600">1. Parse</text>
+    <text x="95" y="277" fill="#9aa1b2" text-anchor="middle" font-size="10">pypdf / python-docx</text>
+    <text x="95" y="290" fill="#666f84" text-anchor="middle" font-size="9.5">→ pages + page #</text>
+
+    <rect x="188" y="235" width="130" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="253" y="260" fill="#e9e7df" text-anchor="middle" font-weight="600">2. Chunk</text>
+    <text x="253" y="277" fill="#9aa1b2" text-anchor="middle" font-size="10">tiktoken, overlap</text>
+    <text x="253" y="290" fill="#666f84" text-anchor="middle" font-size="9.5">→ 500 tok / 75 overlap</text>
+
+    <rect x="346" y="235" width="130" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="411" y="260" fill="#e9e7df" text-anchor="middle" font-weight="600">3. Embed</text>
+    <text x="411" y="277" fill="#9aa1b2" text-anchor="middle" font-size="10">sentence-transformers</text>
+    <text x="411" y="290" fill="#666f84" text-anchor="middle" font-size="9.5">→ 384-dim vectors</text>
+
+    <rect x="504" y="235" width="150" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="579" y="260" fill="#e9e7df" text-anchor="middle" font-weight="600">4. Store</text>
+    <text x="579" y="277" fill="#9aa1b2" text-anchor="middle" font-size="10">ChromaDB (per-session)</text>
+    <text x="579" y="290" fill="#666f84" text-anchor="middle" font-size="9.5">→ swappable interface</text>
+
+    <line x1="160" y1="267" x2="186" y2="267" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="318" y1="267" x2="344" y2="267" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="476" y1="267" x2="502" y2="267" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+  </g>
+
+  <!-- Query pipeline row -->
+  <text x="30" y="355" fill="#e9e7df" font-size="14" font-weight="700">Query pipeline (on each question)</text>
+
+  <g font-size="11.5">
+    <rect x="30" y="375" width="150" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="105" y="400" fill="#e9e7df" text-anchor="middle" font-weight="600">5. Embed query</text>
+    <text x="105" y="417" fill="#9aa1b2" text-anchor="middle" font-size="10">same encoder as ingestion</text>
+    <text x="105" y="430" fill="#666f84" text-anchor="middle" font-size="9.5">→ query vector</text>
+
+    <rect x="204" y="375" width="150" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="279" y="400" fill="#e9e7df" text-anchor="middle" font-weight="600">6. Retrieve top-k</text>
+    <text x="279" y="417" fill="#9aa1b2" text-anchor="middle" font-size="10">cosine similarity search</text>
+    <text x="279" y="430" fill="#666f84" text-anchor="middle" font-size="9.5">→ min-score fallback</text>
+
+    <rect x="378" y="375" width="180" height="64" rx="6" fill="#151923" stroke="#c9a04e" stroke-width="1.3" />
+    <text x="468" y="400" fill="#e9e7df" text-anchor="middle" font-weight="600">7. Generate answer</text>
+    <text x="468" y="417" fill="#9aa1b2" text-anchor="middle" font-size="10">Claude + numbered context</text>
+    <text x="468" y="430" fill="#666f84" text-anchor="middle" font-size="9.5">→ answer with [n] markers</text>
+
+    <rect x="582" y="375" width="170" height="64" rx="6" fill="#151923" stroke="#2a3040" />
+    <text x="667" y="400" fill="#e9e7df" text-anchor="middle" font-weight="600">8. Map citations</text>
+    <text x="667" y="417" fill="#9aa1b2" text-anchor="middle" font-size="10">[n] → doc, page, snippet</text>
+    <text x="667" y="430" fill="#666f84" text-anchor="middle" font-size="9.5">→ shown in chat UI</text>
+
+    <line x1="180" y1="407" x2="202" y2="407" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="354" y1="407" x2="376" y2="407" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="558" y1="407" x2="580" y2="407" stroke="#9aa1b2" stroke-width="1.5" marker-end="url(#arrow)" />
+  </g>
+
+  <!-- Vertical connectors: store <-> retrieve, backend <-> claude -->
+  <line x1="579" y1="299" x2="279" y2="373" stroke="#c9a04e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrowBrass)" />
+  <text x="430" y="345" fill="#c9a04e" font-size="9.5" text-anchor="middle">vector search</text>
+
+  <line x1="410" y1="170" x2="410" y2="233" stroke="#9aa1b2" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrow)" />
+  <line x1="410" y1="170" x2="410" y2="373" stroke="#9aa1b2" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrow)" />
+
+  <line x1="558" y1="407" x2="750" y2="407" stroke="#c9a04e" stroke-width="1.3" opacity="0" />
+  <path d="M 558 395 C 700 395, 800 300, 850 172" fill="none" stroke="#c9a04e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arrowBrass)" />
+  <text x="770" y="270" fill="#c9a04e" font-size="9.5" text-anchor="middle">messages.create()</text>
+
+  <!-- Legend / footer note -->
+  <rect x="30" y="470" width="920" height="110" rx="8" fill="#151923" stroke="#2a3040" />
+  <text x="50" y="495" fill="#c9a04e" font-size="11" font-weight="700" letter-spacing="0.5">DESIGN NOTE</text>
+  <text x="50" y="518" fill="#9aa1b2" font-size="12">EmbeddingProvider and VectorStore are both defined as abstract interfaces (app/embeddings/base.py, app/vectorstore/base.py).</text>
+  <text x="50" y="538" fill="#9aa1b2" font-size="12">The concrete choices here — sentence-transformers + ChromaDB — are the free, local defaults for this MVP. Swapping to</text>
+  <text x="50" y="558" fill="#9aa1b2" font-size="12">Voyage/OpenAI embeddings or Pinecone/Weaviate later means implementing one new class each — no other code changes.</text>
+</svg>

@@ -1,0 +1,92 @@
+/* ============================================================
+   Design tokens
+   Concept: a research desk / card-catalog. Documents are "held"
+   in an index; citations are stamped tabs pulled out of chunks
+   like index cards. Ink-navy desk, brass stamp accent, parchment
+   used only for the evidence cards themselves — never as page bg.
+   ============================================================ */
+:root {
+  --ink-950: #0e1117;
+  --ink-900: #151923;
+  --ink-800: #1c212e;
+  --ink-700: #262c3b;
+  --ink-600: #333b4d;
+  --line: #2a3040;
+
+  --text-primary: #e9e7df;
+  --text-secondary: #9aa1b2;
+  --text-tertiary: #666f84;
+
+  --brass: #c9a04e;
+  --brass-bright: #e0b96b;
+  --parchment: #f1ead9;
+  --parchment-dim: #d9d0ba;
+
+  --error: #d97a6c;
+  --success: #7fae8e;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--ink-950);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--brass);
+  color: var(--ink-950);
+}
+
+/* Focus visibility for keyboard nav */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-700);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-600);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

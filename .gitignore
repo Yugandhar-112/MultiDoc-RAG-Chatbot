@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+*.egg-info/
+
+# Env files
+.env
+.env.local
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Vector store data (local persistence — never commit uploaded content)
+backend/data/chroma_db/*
+!backend/data/chroma_db/.gitkeep
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

@@ -1,0 +1,18 @@
+version: "3.9"
+
+# Convenience for local dev: `docker compose up` runs the backend with
+# hot-reload and persists the Chroma index to ./backend/data on the host.
+# The frontend is intentionally NOT containerized here — `npm run dev` is
+# faster for iterating on the UI. Both frontend and backend are deployed
+# separately in production (see README → Deployment).
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/data:/app/data
+    env_file:
+      - ./backend/.env
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
