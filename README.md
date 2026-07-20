@@ -12,7 +12,7 @@ Built as a portfolio project to demonstrate a complete, production-shaped Retrie
 
 1. **Upload** — drag in one or more PDF / DOCX / TXT files.
 2. **Ingest** — each document is parsed, split into overlapping chunks, embedded, and stored in a per-session vector index.
-3. **Ask** — type a question. The app embeds it, retrieves the most relevant chunks across *all* your uploaded documents, and asks Claude to answer using only that retrieved context.
+3. **Ask** — type a question. The app embeds it, retrieves the most relevant chunks across *all* your uploaded documents, and asks Gemini to answer using only that retrieved context.
 4. **Verify** — every claim in the answer carries a `[n]` marker. Click a citation to expand the exact snippet, source filename, and page number it came from.
 5. **No answer found** — if retrieval doesn't turn up anything relevant, the app says so instead of letting the model guess.
 
@@ -24,7 +24,7 @@ A few decisions worth calling out for anyone reading the code:
 
 - **Interfaces over implementations.** `EmbeddingProvider` (`backend/app/embeddings/base.py`) and `VectorStore` (`backend/app/vectorstore/base.py`) are abstract base classes. The MVP ships `SentenceTransformerProvider` and `ChromaVectorStore`, but nothing else in the app talks to sentence-transformers or ChromaDB directly — only to the interface. Swapping to a hosted embedding API or Pinecone/Weaviate later is a two-class change, not a rewrite.
 - **Page-aware chunking.** Chunks are built per-page (never spanning two PDF pages) and tagged with `page_number` before they ever reach the vector store, so a citation can honestly say "page 4" instead of "somewhere in this file."
-- **Citation numbers are the model's own numbers.** Retrieved chunks are shown to Claude as a numbered list (`[1]`, `[2]`, ...) and the model is instructed to cite inline using those numbers. The backend then parses which numbers actually appear in the answer and returns *only* those chunks as citations — so the UI never shows "evidence" the model didn't actually rely on.
+- **Citation numbers are the model's own numbers.** Retrieved chunks are shown to Gemini as a numbered list (`[1]`, `[2]`, ...) and the model is instructed to cite inline using those numbers. The backend then parses which numbers actually appear in the answer and returns *only* those chunks as citations — so the UI never shows "evidence" the model didn't actually rely on.
 - **A real "I don't know."** If the best-matching chunk falls below a similarity threshold, the backend short-circuits before ever calling the LLM and returns a "no relevant content found" response. This is deliberately not delegated to the model — it's cheaper, faster, and more reliable than hoping the model declines to hallucinate.
 - **One Chroma collection per chat session.** This gives free multi-tenancy (your documents are never searched against someone else's session) and makes "clear my documents" a single collection drop instead of a filtered delete.
 
@@ -38,7 +38,7 @@ A few decisions worth calling out for anyone reading the code:
 | Chunking | Token-based via `tiktoken`, with overlap | Chunk size is measured in the unit that actually matters for context-window budgeting |
 | Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`), local | Free, no API key, no rate limits — see tradeoffs below |
 | Vector store | ChromaDB, local file-based | Zero external services to stand up for an MVP; swappable via `VectorStore` interface |
-| LLM | Anthropic Claude API | Grounded generation over retrieved context |
+| LLM | Google Gemini API (`gemini-2.5-flash`) | Grounded generation over retrieved context, on a genuinely free, ongoing tier |
 
 ### Embeddings: local model vs. hosted API
 
@@ -47,7 +47,7 @@ This was the one real build-vs-buy decision in the project, so it's worth docume
 - **`sentence-transformers` (chosen):** free, runs on CPU, no external API key, no per-call cost or rate limit. Downside: a ~90 MB model to bundle/download, and somewhat lower retrieval quality on tricky domain-specific text than a top hosted model.
 - **Hosted embeddings (e.g. Voyage AI, OpenAI):** noticeably better retrieval quality, and a much lighter backend container (no `torch`), which matters on free-tier hosts with limited RAM/cold-start budgets. Downside: another API key, network dependency, and (usually small) per-call cost.
 
-I went local-first to keep the only paid dependency in the whole project down to the Claude API call itself, and because implementing the embedding step myself (rather than delegating it to an API) was better practice for actually understanding what's happening. The `EmbeddingProvider` interface means switching to Voyage/OpenAI later is one new file.
+I went local-first to keep the whole project running on free tiers end to end — Gemini's API for generation and sentence-transformers for embeddings — and because implementing the embedding step myself (rather than delegating it to an API) was better practice for actually understanding what's happening. The `EmbeddingProvider` interface means switching to Voyage/OpenAI later is one new file.
 
 ## Repository structure
 
@@ -84,7 +84,7 @@ multidoc-rag-chatbot/
 
 - Python 3.11+
 - Node 18+
-- An [Anthropic API key](https://console.anthropic.com/)
+- A free [Google Gemini API key](https://aistudio.google.com/) (click "Get API key" — no credit card required)
 
 ### Backend
 
@@ -95,7 +95,7 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env
-# then edit .env and set ANTHROPIC_API_KEY
+# then edit .env and set GEMINI_API_KEY
 
 uvicorn app.main:app --reload --port 8000
 ```
@@ -143,8 +143,8 @@ git push -u origin main
 2. Set **Root Directory** to `backend`.
 3. Render will detect the `Dockerfile` automatically — choose **Docker** as the environment (no build/start command needed, they're in the Dockerfile).
 4. Under **Environment Variables**, add:
-   - `ANTHROPIC_API_KEY` — your key from the Anthropic Console
-   - `CLAUDE_MODEL` — `claude-sonnet-4-5` (or your preferred model)
+   - `GEMINI_API_KEY` — your free key from [Google AI Studio](https://aistudio.google.com/)
+   - `GEMINI_MODEL` — `gemini-2.5-flash` (or your preferred Gemini model)
    - `EMBEDDING_MODEL` — `all-MiniLM-L6-v2`
    - `CHROMA_PERSIST_DIR` — `./data/chroma_db`
    - `CHUNK_SIZE_TOKENS` — `500`
