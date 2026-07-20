@@ -1,22 +1,27 @@
 """
 RAG STEP 6: Generation.
 
-Takes the user's question + the retrieved chunks and asks Claude to answer
+Takes the user's question + the retrieved chunks and asks Gemini to answer
 *using only that context*, citing which numbered source(s) it drew on.
 
 Two things keep this grounded rather than free-associating:
-  1. The system prompt explicitly instructs Claude to say it doesn't know
-     if the context doesn't contain the answer, instead of guessing.
+  1. The system instruction explicitly tells the model to say it doesn't
+     know if the context doesn't contain the answer, instead of guessing.
   2. Each chunk is presented to the model with a bracketed number (e.g.
      [1], [2]) and the model is told to cite those numbers inline. We then
      parse which numbers actually appear in the answer and only return
      *those* chunks as citations — so the citations shown to the user are
      the ones the model says it actually used, not just everything that
      was retrieved.
+
+Uses Google's Gemini API (via the `google-genai` SDK) rather than a paid
+LLM provider, so this whole pipeline can run on Gemini's free tier with no
+billing setup — see README for API key setup and free-tier limits.
 """
 import re
 
-import anthropic
+from google import genai
+from google.genai import types
 
 from app.rag.retriever import RetrievedChunk
 
@@ -44,7 +49,7 @@ def extract_cited_indices(answer_text: str) -> set[int]:
 
 class AnswerGenerator:
     def __init__(self, api_key: str, model: str):
-        self._client = anthropic.Anthropic(api_key=api_key)
+        self._client = genai.Client(api_key=api_key)
         self._model = model
 
     def generate(
@@ -65,17 +70,24 @@ class AnswerGenerator:
             f"Question: {question}"
         )
 
-        messages = list(chat_history or [])
-        messages.append({"role": "user", "content": user_turn})
+        # Gemini's chat history uses role="model" where Anthropic/OpenAI use
+        # "assistant" — translate the app's internal history format (which
+        # is provider-agnostic) into Gemini's expected shape.
+        contents = []
+        for turn in chat_history or []:
+            role = "model" if turn["role"] == "assistant" else "user"
+            contents.append(
+                types.Content(role=role, parts=[types.Part.from_text(text=turn["content"])])
+            )
+        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=user_turn)]))
 
-        response = self._client.messages.create(
+        response = self._client.models.generate_content(
             model=self._model,
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=messages,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                max_output_tokens=1024,
+            ),
         )
 
-        # Concatenate all text blocks in the response
-        return "".join(
-            block.text for block in response.content if block.type == "text"
-        )
+        return response.text or ""

@@ -44,4 +44,4 @@ def get_retriever() -> Retriever:
 @lru_cache
 def get_generator() -> AnswerGenerator:
     settings = get_settings()
-    return AnswerGenerator(api_key=settings.anthropic_api_key, model=settings.claude_model)
+    return AnswerGenerator(api_key=settings.gemini_api_key, model=settings.gemini_model)
