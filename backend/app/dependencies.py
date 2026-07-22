@@ -14,7 +14,7 @@ from functools import lru_cache
 
 from app.config import get_settings
 from app.embeddings.base import EmbeddingProvider
-from app.embeddings.sentence_transformer_provider import SentenceTransformerProvider
+from app.embeddings.gemini_embedding_provider import GeminiEmbeddingProvider
 from app.vectorstore.base import VectorStore
 from app.vectorstore.chroma_store import ChromaVectorStore
 from app.rag.retriever import Retriever
@@ -24,7 +24,7 @@ from app.rag.generator import AnswerGenerator
 @lru_cache
 def get_embedding_provider() -> EmbeddingProvider:
     settings = get_settings()
-    return SentenceTransformerProvider(model_name=settings.embedding_model)
+    return GeminiEmbeddingProvider(api_key=settings.gemini_api_key, model=settings.embedding_model)
 
 
 @lru_cache
