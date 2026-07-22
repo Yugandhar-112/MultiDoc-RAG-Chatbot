@@ -29,8 +29,9 @@ SYSTEM_PROMPT = """You are a helpful assistant that answers questions strictly u
 
 Rules:
 - Only use information from the numbered excerpts below to answer.
-- Every factual claim in your answer must be followed by a citation marker like [1] or [2] referencing the excerpt(s) it came from.
+- Every factual claim in your answer must be followed by a citation marker like [1] or [2] referencing the excerpt(s) it came from. If a claim draws on more than one excerpt, use separate brackets for each, like [1][2] — never combine numbers inside a single bracket (do not write [1, 2]).
 - If the excerpts do not contain enough information to answer the question, say clearly that you couldn't find the answer in the uploaded documents. Do not guess or use outside knowledge.
+- Do not use markdown formatting such as **bold**, bullet points, or headers — write in plain prose sentences and paragraphs only.
 - Be concise and direct."""
 
 
@@ -43,8 +44,20 @@ def build_context_block(chunks: list[RetrievedChunk]) -> str:
 
 
 def extract_cited_indices(answer_text: str) -> set[int]:
-    """Find every [n] marker the model actually used in its answer."""
-    return {int(n) for n in re.findall(r"\[(\d+)\]", answer_text)}
+    """
+    Find every citation number the model actually used in its answer.
+
+    Gemini doesn't always follow the "one number per bracket" instruction
+    consistently — it sometimes emits a single grouped bracket like
+    "[1, 4]" instead of two separate "[1][4]" markers. We match the whole
+    bracket group first, then split on commas inside it, so grouped
+    citations aren't silently dropped from the citations list.
+    """
+    indices = set()
+    for group in re.findall(r"\[(\d+(?:\s*,\s*\d+)*)\]", answer_text):
+        for n in group.split(","):
+            indices.add(int(n.strip()))
+    return indices
 
 
 class AnswerGenerator:
@@ -86,7 +99,15 @@ class AnswerGenerator:
             contents=contents,
             config=types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=1024,
+                # Newer Gemini models "think" internally by default, and
+                # those thinking tokens are drawn from the same budget as
+                # max_output_tokens — a low ceiling can let invisible
+                # reasoning silently consume the whole budget, cutting the
+                # actual visible answer off mid-sentence. Explicitly
+                # disabling thinking (thinking_config) isn't accepted by
+                # every model version behind the "-latest" alias, so
+                # instead we just give the budget plenty of headroom.
+                max_output_tokens=4096,
             ),
         )
 
