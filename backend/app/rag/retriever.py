@@ -20,7 +20,7 @@ from app.vectorstore.base import VectorStore, SearchResult
 # Below this cosine similarity, we treat retrieval as "nothing relevant
 # found" rather than forcing a low-quality answer. Tuned empirically —
 # lower it if the corpus uses very different vocabulary than the questions.
-MIN_RELEVANCE_SCORE = 0.25
+MIN_RELEVANCE_SCORE = 0.08
 
 
 @dataclass
@@ -45,6 +45,7 @@ class Retriever:
         raw_results: list[SearchResult] = self._store.search(
             session_id=session_id, query_embedding=query_embedding, top_k=top_k
         )
+        print("RETRIEVAL DEBUG:", [(r.score, r.text[:60]) for r in raw_results])
 
         chunks = []
         for r in raw_results:
