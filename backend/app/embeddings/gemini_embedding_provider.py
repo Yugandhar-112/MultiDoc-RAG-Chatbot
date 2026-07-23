@@ -31,15 +31,23 @@ class GeminiEmbeddingProvider(EmbeddingProvider):
         self._model = model
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        result = self._client.models.embed_content(
-            model=self._model,
-            contents=texts,
-            config=types.EmbedContentConfig(
-                task_type="RETRIEVAL_DOCUMENT",
-                output_dimensionality=OUTPUT_DIMENSIONALITY,
-            ),
-        )
-        return [e.values for e in result.embeddings]
+        # Calling embed_content once per chunk, rather than passing the
+        # whole list in a single call, sidesteps a bug where the SDK's
+        # batch code path (BatchEmbedContentsRequest) sends a malformed
+        # model name and gets rejected by the API — the single-text path
+        # (used by embed_query below) doesn't hit this bug.
+        embeddings = []
+        for text in texts:
+            result = self._client.models.embed_content(
+                model=self._model,
+                contents=text,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=OUTPUT_DIMENSIONALITY,
+                ),
+            )
+            embeddings.append(result.embeddings[0].values)
+        return embeddings
 
     def embed_query(self, text: str) -> list[float]:
         result = self._client.models.embed_content(
