@@ -1,16 +1,7 @@
 import CitationBadge from './CitationBadge.jsx'
 
-// Renders [n] citation markers (including grouped ones like "[1, 4]") as
-// small superscript tags matching the citation badges below, and quietly
-// strips stray **bold** markers if the model emits them despite being
-// told not to — belt-and-suspenders since instruction-following isn't
-// perfectly reliable.
 function AnswerText({ text }) {
   const cleaned = text.replace(/\*\*(.+?)\*\*/g, '$1')
-
-  // Split on citation bracket groups — single "[1]" or grouped "[1, 4]" —
-  // capturing the digits+commas inside so each number can become its own
-  // superscript, matching how the backend now parses grouped citations.
   const parts = cleaned.split(/(\[\d+(?:\s*,\s*\d+)*\])/g)
 
   return (
@@ -35,11 +26,16 @@ function AnswerText({ text }) {
   )
 }
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, index }) {
   const isUser = message.role === 'user'
+  // Numbering each turn gives the margin something concrete to anchor on —
+  // like a manuscript's marginal folio number — rather than the message
+  // simply floating in empty space.
+  const turnLabel = String(index + 1).padStart(2, '0')
 
   return (
     <div className={`message-row ${isUser ? 'message-row-user' : ''}`}>
+      {!isUser && <span className="turn-label">{turnLabel}</span>}
       <div className={`message-bubble ${isUser ? 'message-bubble-user' : 'message-bubble-assistant'}`}>
         {message.no_answer_found && <div className="no-answer-flag">No confident match found</div>}
         <AnswerText text={message.content} />
